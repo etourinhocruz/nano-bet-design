@@ -1,0 +1,40 @@
+﻿import streamlit as st
+import google.generativeai as genai
+
+
+# Título do seu Site
+st.set_page_config(page_title="Nano Bet Design", page_icon="🚀")
+st.title("🎯 Nano Bet Design App")
+
+
+# Configuração da Inteligência
+api_key = AIzaSyBRfe5Sf_hNdvWstLez9hFP3leoygEtcRQ
+genai.configure(api_key=api_key)
+
+
+# O cérebro que você configurou no Studio
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+
+# Exibe as mensagens na tela
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+
+# Onde o seu atendente escreve
+if prompt := st.chat_input("Para qual expert vamos criar hoje?"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+
+    # A IA respondendo
+    response = model.generate_content(prompt)
+    st.session_state.messages.append({"role": "assistant", "content": response.text})
+    with st.chat_message("assistant"):
+        st.markdown(response.text)
