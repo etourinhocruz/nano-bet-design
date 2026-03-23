@@ -5,51 +5,52 @@ import google.generativeai as genai
 st.set_page_config(page_title="Nano Bet Design", page_icon="🎯")
 st.title("🎯 Nano Bet Design App")
 
-# AQUI ESTÁ A CORREÇÃO: A chave agora tem aspas ("")
+# Chave da API
 api_key = "AIzaSyBRfe5Sf_hNdVWsLez9hFP3leoygEtcRQ"
 genai.configure(api_key=api_key)
 
-# O CÉREBRO DO AGENTE (Instruções dos Experts)
+# Instruções do Agente (O "Cérebro")
 SYSTEM_PROMPT = """
-Nome do Agente: Nano Bet Design. Persona: Diretor de Arte Pro.
-Experts Cadastrados:
-- Herculano: Rosa #df3891, Verde #c2ff35.
-- Helder da Bet: Verde #00ff1e.
-- Nascimento: Verde #37c200.
-- Raquel Maia: Azul #22447f, Verde #c7ff28.
-- Neto Lima: Ciano #64e6f9.
-- Nalanda Tips: Roxo #cd00ff.
-- MD: Verde #5acd51.
-- Luiz Royal: Ciano #00fffc.
-- Danda: Verde #00ff06.
-- Camillo: Verde #00ff30.
-- Bruno Karttos: Amarelo #f9b61d.
-- Luisa Mendes: Roxo #8400ff.
-
-Regras: 15% de margem no topo/base. Gerar prompts em INGLÊS.
-Fluxo: 1. Saudação; 2. Triagem; 3. Prompt Técnico; 4. Ajustes.
+Você é o Nano Bet Design, um Diretor de Arte Pro.
+Sua missão é criar prompts de imagem em INGLÊS para cards de apostas.
+Experts: Herculano, Helder da Bet, Nascimento, Raquel Maia, Neto Lima, Nalanda, MD, Luiz Royal, Danda, Camillo, Bruno Karttos, Luisa Mendes.
+Regras: Use as cores dos manuais, mantenha 15% de margem (Safe Zone) e foco em nitidez mobile.
+Fluxo: Sempre comece com a saudação oficial e peça os dados do card.
 """
 
-# Inicializar o modelo com as instruções
+# Configuração de Segurança (Para não dar erro com termos de apostas)
+safety_settings = [
+    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+]
+
+# Inicializar o modelo corretamente
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
-    system_instruction=SYSTEM_PROMPT
+    model_name="models/gemini-1.5-flash",
+    system_instruction=SYSTEM_PROMPT,
+    safety_settings=safety_settings
 )
 
+# Gerenciar o histórico do chat
 if "chat" not in st.session_state:
     st.session_state.chat = model.start_chat(history=[])
 
-# Mostrar o chat
+# Mostrar as mensagens
 for message in st.session_state.chat.history:
     role = "user" if message.role == "user" else "assistant"
     with st.chat_message(role):
         st.markdown(message.parts[0].text)
 
+# Entrada do usuário
 if prompt := st.chat_input("Para qual expert vamos criar hoje?"):
     with st.chat_message("user"):
         st.markdown(prompt)
     
-    response = st.session_state.chat.send_message(prompt)
-    
-    with st.chat_message("assistant"):
-        st.markdown(response.text)
+    try:
+        response = st.session_state.chat.send_message(prompt)
+        with st.chat_message("assistant"):
+            st.markdown(response.text)
+    except Exception as e:
+        st.error(f"Erro na API: {e}")
